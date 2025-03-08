@@ -28,7 +28,7 @@ class {{$m.MessageName}}:
         return self.__form
     {{end}}{{if $m.PathCount}}
     def get_path(self, path):
-        for k, v in self.__path:
+        for k, v in self.__path.items():
             path = path.replace(':' + k, v)
         return path
 {{end}}{{end}}

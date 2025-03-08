@@ -7,15 +7,14 @@ class {{$.ClientName}}:
         self.__base_url = f'{scheme}://{host}:{port}'
 
     {{range $i, $a := $.Actions}}
-    def {{$a.HttpMethod}}_{{$a.ActionName}}(self{{if $a.RequestMessage}}, req: {{$a.RequestMessage.MessageName}}{{end}}{{if or (not $a.RequestMessage) (not $a.RequestMessage.BodyCount)}}, body=None{{end}}) -> {{if $a.ResponseMessage}}{{$a.ResponseMessage.MessageName}}{{else}}httpx.Response{{end}}:
+    def {{$a.HttpMethod}}_{{$a.ActionName}}(self{{if $a.RequestMessage}}, req: {{$a.RequestMessage.MessageName}}{{end}}{{if or (not $a.RequestMessage) (not $a.RequestMessage.BodyCount)}}{{if not (eq $a.HttpMethod "get")}}, body=None{{end}}{{end}}) -> {{if $a.ResponseMessage}}{{$a.ResponseMessage.MessageName}}{{else}}httpx.Response{{end}}:
         r = httpx.{{$a.HttpMethod}}({{if and $a.RequestMessage $a.RequestMessage.PathCount}}req.get_path(f'{self.__base_url}{{$a.UrlPrefix}}{{$a.UrlPath}}'){{else}}f'{self.__base_url}{{$a.UrlPrefix}}{{$a.UrlPath}}'{{end}}{{if $a.RequestMessage }}{{if $a.RequestMessage.HeaderCount}},
             headers=req.get_headers(){{end}}{{if $a.RequestMessage.BodyCount}},
-            json=req.get_body(){{else}},
-            json=body{{end}}{{if $a.RequestMessage.FormCount}},
-            params=req.get_query_params(){{end}}
-        {{else}},json=body{{end}})
+            json=req.get_body(){{else}}{{if not (eq $a.HttpMethod "get")}},
+            json=body{{end}}{{end}}{{if $a.RequestMessage.FormCount}},
+            params=req.get_query_params(){{end}}{{else}}{{if not (eq $a.HttpMethod "get")}},json=body{{end}}{{end}})
         if r.status_code != httpx.codes.OK:
-            raise OpenApiException(r.content, r.status_code)
+            raise {{$.ClientName}}Exception(r.content, r.status_code)
         {{if $a.ResponseMessage}}
         result = {{$a.ResponseMessage.MessageName}}(){{if $a.ResponseMessage.HeaderCount}}
         result.set_headers(r.headers){{end}}{{if $a.ResponseMessage.BodyCount}}
